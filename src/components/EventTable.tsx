@@ -6,8 +6,8 @@ import {
     flexRender,
     createColumnHelper,
 } from "@tanstack/react-table";
-import { Calendar as CalendarIcon, MapPin, AlignLeft, Clock } from "lucide-react";
-import { useState } from "react";
+import { Calendar as CalendarIcon, MapPin, AlignLeft, Clock, CheckSquare, Square } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface Event {
     date: string;
@@ -21,7 +21,7 @@ interface Event {
 interface EventTableProps {
     data: Event[];
     onUpdate: (data: Event[]) => void;
-    onSave: () => void;
+    onSave: (selectedEvents: Event[]) => void;
     saving: boolean;
 }
 
@@ -29,6 +29,17 @@ const columnHelper = createColumnHelper<Event>();
 
 export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) {
     const [editedData, setEditedData] = useState(data);
+    const [rowSelection, setRowSelection] = useState({});
+
+    useEffect(() => {
+        setEditedData(data);
+        // Default select all when data changes
+        const selection: Record<string, boolean> = {};
+        data.forEach((_, index) => {
+            selection[index] = true;
+        });
+        setRowSelection(selection);
+    }, [data]);
 
     const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
         const newData = [...editedData];
@@ -38,8 +49,36 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
     };
 
     const columns = [
+        {
+            id: "select",
+            header: ({ table }: any) => (
+                <button
+                    onClick={table.getToggleAllRowsSelectedHandler()}
+                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                    title={table.getIsAllRowsSelected() ? "全選択解除" : "全選択"}
+                >
+                    {table.getIsAllRowsSelected() ? (
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                    ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                </button>
+            ),
+            cell: ({ row }: any) => (
+                <button
+                    onClick={row.getToggleSelectedHandler()}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                    {row.getIsSelected() ? (
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                    ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                </button>
+            ),
+        },
         columnHelper.accessor("date", {
-            header: () => <div className="flex items-center gap-2"><CalendarIcon className="w-4 h-4" /> 日付</div>,
+            header: () => <div className="flex items-center gap-2 text-nowrap"><CalendarIcon className="w-4 h-4" /> 日付</div>,
             cell: (info) => (
                 <input
                     className="w-full bg-transparent border-none focus:ring-0 text-sm"
@@ -49,7 +88,7 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
             ),
         }),
         columnHelper.accessor("startTime", {
-            header: () => <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> 開始</div>,
+            header: () => <div className="flex items-center gap-2 text-nowrap"><Clock className="w-4 h-4" /> 開始</div>,
             cell: (info) => (
                 <input
                     className="w-full bg-transparent border-none focus:ring-0 text-sm"
@@ -59,7 +98,7 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
             ),
         }),
         columnHelper.accessor("title", {
-            header: () => "予定名",
+            header: () => <div className="text-nowrap">予定名</div>,
             cell: (info) => (
                 <input
                     className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium"
@@ -69,7 +108,7 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
             ),
         }),
         columnHelper.accessor("location", {
-            header: () => <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /> 場所</div>,
+            header: () => <div className="flex items-center gap-2 text-nowrap"><MapPin className="w-4 h-4" /> 場所</div>,
             cell: (info) => (
                 <input
                     className="w-full bg-transparent border-none focus:ring-0 text-sm"
@@ -79,7 +118,7 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
             ),
         }),
         columnHelper.accessor("description", {
-            header: () => <div className="flex items-center gap-2"><AlignLeft className="w-4 h-4" /> 詳細</div>,
+            header: () => <div className="flex items-center gap-2 text-nowrap"><AlignLeft className="w-4 h-4" /> 詳細</div>,
             cell: (info) => (
                 <input
                     className="w-full bg-transparent border-none focus:ring-0 text-sm"
@@ -93,8 +132,20 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
     const table = useReactTable({
         data: editedData,
         columns,
+        state: {
+            rowSelection,
+        },
+        onRowSelectionChange: setRowSelection,
         getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
     });
+
+    const selectedCount = Object.keys(rowSelection).length;
+
+    const handleSaveClick = () => {
+        const selectedEvents = table.getSelectedRowModel().rows.map(row => row.original);
+        onSave(selectedEvents);
+    };
 
     return (
         <div className="w-full overflow-hidden flex flex-col gap-6">
@@ -116,7 +167,10 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {table.getRowModel().rows.map((row) => (
-                            <tr key={row.id} className="hover:bg-blue-50/30 transition-colors">
+                            <tr
+                                key={row.id}
+                                className={`transition-colors ${row.getIsSelected() ? 'bg-blue-50/50' : 'hover:bg-gray-50/50'}`}
+                            >
                                 {row.getVisibleCells().map((cell) => (
                                     <td key={cell.id} className="px-4 py-2">
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -128,14 +182,17 @@ export function EventTable({ data, onUpdate, onSave, saving }: EventTableProps) 
                 </table>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-sm text-gray-500 font-medium">
+                    {selectedCount} 件の予定を選択中 / 全 {data.length} 件
+                </div>
                 <button
-                    onClick={onSave}
-                    disabled={saving || editedData.length === 0}
-                    className="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 flex items-center gap-2"
+                    onClick={handleSaveClick}
+                    disabled={saving || selectedCount === 0}
+                    className="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 text-nowrap"
                 >
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    Googleカレンダーに一括登録
+                    選択した {selectedCount} 件をカレンダーに登録
                 </button>
             </div>
         </div>

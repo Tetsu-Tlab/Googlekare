@@ -9,14 +9,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { events } = await req.json();
+    const { events, calendarId } = await req.json();
 
     if (!events || !Array.isArray(events)) {
         return NextResponse.json({ error: "Invalid events data" }, { status: 400 });
     }
 
     try {
-        const results = await addEventsToGoogleCalendar(session.accessToken, events);
+        const results = await addEventsToGoogleCalendar(session.accessToken, events, calendarId || "primary");
         return NextResponse.json({ success: true, results });
     } catch (error: any) {
         console.error("Calendar integration error:", error);

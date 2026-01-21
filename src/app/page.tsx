@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { FileUpload } from "@/components/FileUpload";
 import { EventTable } from "@/components/EventTable";
-import { useSession } from "next-auth/react";
+import { CalendarSelector } from "@/components/CalendarSelector";
+import { useSession, signIn } from "next-auth/react";
 import { Calendar, Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
@@ -12,28 +13,47 @@ export default function Home() {
   const [events, setEvents] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string>("primary");
+
+  // Load saved calendar ID from localStorage
+  useEffect(() => {
+    const savedId = localStorage.getItem("selectedCalendarId");
+    if (savedId) {
+      setSelectedCalendarId(savedId);
+    }
+  }, []);
+
+  // Save calendar ID to localStorage when it changes
+  const handleCalendarSelect = (id: string) => {
+    setSelectedCalendarId(id);
+    localStorage.setItem("selectedCalendarId", id);
+  };
 
   const handleParsed = (newEvents: any[]) => {
     setEvents(newEvents);
     setSuccess(false);
   };
 
-  const handleSave = async () => {
-    if (!session) return;
+  const handleSave = async (eventsToSave: any[] = events, calendarId: string = selectedCalendarId) => {
+    if (!session || eventsToSave.length === 0) return;
     setSaving(true);
     try {
       const res = await fetch("/api/calendar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ events }),
+        body: JSON.stringify({
+          events: eventsToSave,
+          calendarId: calendarId
+        }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
       setSuccess(true);
-      setEvents([]);
-    } catch (err) {
-      alert("カレンダーへの登録に失敗しました。");
+      setEvents([]); // Clear events after successful save
+    } catch (err: any) {
+      console.error("Calendar save error:", err);
+      alert(`カレンダーへの登録に失敗しました。\n${err.message || "不明なエラー"}`);
     } finally {
       setSaving(false);
     }
@@ -68,7 +88,7 @@ export default function Home() {
               Googleカレンダーとの同期には、Googleアカウントでのログインが必要です。
             </p>
             <button
-              onClick={() => import("next-auth/react").then(m => m.signIn("google"))}
+              onClick={() => signIn("google")}
               className="w-full bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
             >
               Googleでログインして始める
@@ -77,11 +97,18 @@ export default function Home() {
         ) : (
           <div className="space-y-12">
             {events.length === 0 ? (
-              <div className="space-y-8">
+              <div className="space-y-8 max-w-3xl mx-auto">
+                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                  <CalendarSelector
+                    selectedCalendarId={selectedCalendarId}
+                    onSelect={handleCalendarSelect}
+                  />
+                </div>
+
                 <FileUpload onParsed={handleParsed} />
 
                 {success && (
-                  <div className="max-w-xl mx-auto p-6 bg-green-50 border border-green-100 rounded-3xl flex flex-col items-center text-center gap-3">
+                  <div className="p-6 bg-green-50 border border-green-100 rounded-3xl flex flex-col items-center text-center gap-3">
                     <div className="bg-green-100 p-3 rounded-full">
                       <CheckCircle2 className="w-8 h-8 text-green-600" />
                     </div>
@@ -96,14 +123,20 @@ export default function Home() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-between items-end">
-                  <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+                  <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900">読み取り結果の確認</h2>
                     <p className="text-gray-500">AIが抽出した内容を確認し、必要に応じて修正してください。</p>
                   </div>
+                  <div className="w-full sm:w-80">
+                    <CalendarSelector
+                      selectedCalendarId={selectedCalendarId}
+                      onSelect={handleCalendarSelect}
+                    />
+                  </div>
                   <button
                     onClick={() => setEvents([])}
-                    className="text-sm font-medium text-gray-500 hover:text-gray-700 underline"
+                    className="text-sm font-medium text-gray-500 hover:text-gray-700 underline shrink-0"
                   >
                     キャンセル
                   </button>

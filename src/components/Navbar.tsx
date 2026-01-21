@@ -14,7 +14,7 @@ export function Navbar() {
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <Calendar className="text-white w-6 h-6" />
                         </div>
-                        <span className="text-xl font-bold text-gray-900">AI Schedule Sync</span>
+                        <span className="text-xl font-bold text-gray-900 tracking-tight">SnapSync-AI</span>
                     </div>
                     <div>
                         {session ? (

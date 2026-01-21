@@ -69,8 +69,8 @@ export default function Home() {
             <Sparkles className="w-4 h-4" />
             <span>AIでスケジュール管理をスマートに</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
-            AI Schedule Sync
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            SnapSync-AI
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             書類や画像からスケジュールを読み取り、<br className="hidden sm:block" />

@@ -6,8 +6,8 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Schedule Sync",
-  description: "Googleカレンダーに予定を自動同期",
+  title: "SnapSync-AI",
+  description: "AIでスケジュールを読み取りGoogleカレンダーに自動同期",
 };
 
 export default function RootLayout({

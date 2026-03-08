@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
             // ── AI OFF: テキスト抽出 + 正規表現パース ─────────────
             let text = "";
             if (mimeType === "application/pdf") {
-                const pdfParse = (await import("pdf-parse")).default;
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                const pdfParse = require("pdf-parse");
                 const parsed = await pdfParse(buffer);
                 text = parsed.text;
             } else if (

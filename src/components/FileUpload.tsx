@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
     onParsed: (events: any[]) => void;
+    aiEnabled?: boolean;
 }
 
-export function FileUpload({ onParsed }: FileUploadProps) {
+export function FileUpload({ onParsed, aiEnabled = true }: FileUploadProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -22,6 +23,7 @@ export function FileUpload({ onParsed }: FileUploadProps) {
 
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("aiEnabled", String(aiEnabled));
 
         try {
             const res = await fetch("/api/parse", {
@@ -77,7 +79,7 @@ export function FileUpload({ onParsed }: FileUploadProps) {
                     </div>
                     <div className="text-center">
                         <p className="text-lg font-semibold text-gray-900">
-                            {loading ? "AI 解析中..." : "ファイルをアップロード"}
+                            {loading ? (aiEnabled ? "AI 解析中..." : "解析中...") : "ファイルをアップロード"}
                         </p>
                         <p className="text-sm text-gray-500 mt-1">
                             ドラッグ＆ドロップまたはクリックして選択

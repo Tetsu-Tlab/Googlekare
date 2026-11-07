@@ -3,7 +3,7 @@ import { parseScheduleWithGemini } from "@/lib/gemini";
 import mammoth from "mammoth";
 import * as xlsx from "xlsx";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
